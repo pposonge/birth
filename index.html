@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리가족 나이 계산기</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --bg-color: #F4F7F6;
+            --card-bg: #FFFFFF;
+            --text-main: #333333;
+            --text-sub: #777777;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: var(--text-sub);
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 0;
+        }
+
+        .add-form {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            max-width: 600px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .add-form input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none;
+        }
+
+        .add-form button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .add-form button:hover {
+            background-color: #357ABD;
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            padding: 25px;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .delete-btn {
+            background: #ff5e5e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .delete-btn:hover {
+            background: #e04a4a;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .info-label {
+            color: var(--text-sub);
+        }
+
+        .info-value {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .highlight {
+            font-size: 1.3em;
+            color: #e67e22;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>👨‍👩‍👧‍👧 우리가족 나이 계산기</h1>
+        <p id="todayDate">오늘 날짜 기준으로 불러오는 중...</p>
+    </div>
+
+    <div class="add-form">
+        <input type="text" id="newName" placeholder="이름 (예: 막내)" required>
+        <input type="date" id="newDate" required>
+        <button onclick="addPerson()">+ 인원 추가</button>
+    </div>
+
+    <div class="card-container" id="cardContainer">
+        </div>
+
+    <script>
+        // 기본 5명 데이터
+        const defaultFamily = [
+            { id: 1, name: "할머니", birthDate: "1944-12-17", emoji: "👵" },
+            { id: 2, name: "아빠", birthDate: "1981-01-29", emoji: "👨" },
+            { id: 3, name: "엄마", birthDate: "1976-03-10", emoji: "👩" },
+            { id: 4, name: "큰딸", birthDate: "2005-11-02", emoji: "👧" },
+            { id: 5, name: "작은딸", birthDate: "2008-09-03", emoji: "🧒" }
+        ];
+
+        // 0: 원숭이 ~ 11: 양 (연도%12 매핑 기준 배열)
+        const zodiacSigns = ["원숭이", "닭", "개", "돼지", "쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양"];
+
+        // 오늘 날짜 표시
+        function displayToday() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('todayDate').innerText = `오늘 날짜 : ${year}년 ${month}월 ${day}일 기준`;
+            return today;
+        }
+
+        // 나이 및 띠 계산 함수 (★입춘 기준 반영)
+        function calculateAgeInfo(birthDateStr, today) {
+            const birthDate = new Date(birthDateStr);
+            const birthYear = birthDate.getFullYear();
+            const birthMonth = birthDate.getMonth(); // 0 = 1월, 1 = 2월
+            const birthDay = birthDate.getDate();
+
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+            const currentDay = today.getDate();
+
+            // 1. 연나이 계산
+            const yeonNai = currentYear - birthYear;
+
+            // 2. 만나이 계산
+            let manNai = yeonNai;
+            if (currentMonth < birthMonth || (currentMonth === birthMonth && currentDay < birthDay)) {
+                manNai--;
+            }
+
+            // 3. 띠 계산 (입춘 기준: 양력 2월 4일 컷오프)
+            let zodiacYear = birthYear;
+            // 2월 4일보다 이전에 태어난 경우 전년도 기운(띠)을 따름
+            if (birthMonth < 1 || (birthMonth === 1 && birthDay < 4)) {
+                zodiacYear--;
+            }
+            const zodiacIndex = ((zodiacYear % 12) + 12) % 12; // 음수 방지용 보정
+            const zodiac = zodiacSigns[zodiacIndex] + "띠";
+
+            return { manNai, yeonNai, zodiac };
+        }
+
+        // 로컬 스토리지에서 데이터 불러오기
+        function getFamilyData() {
+            const storedData = localStorage.getItem('familyAgesData');
+            if (storedData) {
+                return JSON.parse(storedData);
+            } else {
+                localStorage.setItem('familyAgesData', JSON.stringify(defaultFamily));
+                return defaultFamily;
+            }
+        }
+
+        // 화면에 카드 그리기
+        function renderCards() {
+            const container = document.getElementById('cardContainer');
+            container.innerHTML = ''; 
+            const family = getFamilyData();
+            const today = displayToday(); 
+
+            family.forEach(person => {
+                const info = calculateAgeInfo(person.birthDate, today);
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <h2>${person.emoji || "👤"} ${person.name}</h2>
+                        <button class="delete-btn" onclick="removePerson(${person.id})">삭제</button>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">생년월일</span>
+                        <span>${person.birthDate}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">띠</span>
+                        <span class="info-value">${info.zodiac}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">연나이</span>
+                        <span class="info-value">${info.yeonNai}세</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">만나이</span>
+                        <span class="info-value highlight">${info.manNai}세</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 인원 추가 함수
+        function addPerson() {
+            const nameInput = document.getElementById('newName').value.trim();
+            const dateInput = document.getElementById('newDate').value;
+
+            if (!nameInput || !dateInput) {
+                alert("이름과 생년월일을 모두 입력해주세요.");
+                return;
+            }
+
+            const family = getFamilyData();
+            const newPerson = {
+                id: Date.now(), 
+                name: nameInput,
+                birthDate: dateInput,
+                emoji: "👤" 
+            };
+
+            family.push(newPerson);
+            localStorage.setItem('familyAgesData', JSON.stringify(family));
+            
+            document.getElementById('newName').value = '';
+            document.getElementById('newDate').value = '';
+            
+            renderCards();
+        }
+
+        // 인원 삭제 함수
+        function removePerson(id) {
+            if(confirm("정말로 삭제하시겠습니까?")) {
+                let family = getFamilyData();
+                family = family.filter(person => person.id !== id);
+                localStorage.setItem('familyAgesData', JSON.stringify(family));
+                renderCards();
+            }
+        }
+
+        // 초기 실행
+        renderCards();
+    </script>
+</body>
+</html>
